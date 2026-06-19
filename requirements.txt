@@ -2,4 +2,3 @@ skyfield
 jplephem
 matplotlib
 streamlit
-pytz
