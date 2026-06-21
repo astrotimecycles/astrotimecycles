@@ -90,7 +90,6 @@ st.markdown(
 @st.cache_resource
 def _load_ephemeris():
     ts = load.timescale()
-    # Streamlit Cloud handles file downloads seamlessly using standard skyfield assets
     eph = load('de421.bsp')
     return ts, eph
 
@@ -237,7 +236,6 @@ def calc_north_node_lon(t, jd_ut, eph, zodiac_mode: str, ayanamsa_name: str) -> 
     moon_vec = eph["earth"].at(t).observe(eph["moon"]).apparent()
     pos = moon_vec.frame_xyz(ecliptic_frame)
     r = pos.au
-    # Numerical velocity approximation
     t_epsilon = t.ts.from_datetime(t.utc_datetime() + timedelta(minutes=10))
     moon_vec2 = eph["earth"].at(t_epsilon).observe(eph["moon"]).apparent()
     pos2 = moon_vec2.frame_xyz(ecliptic_frame)
@@ -262,7 +260,6 @@ def layout_glyphs_on_ring(plot_positions, label_r, pad_deg=6.0):
     items.sort(key=lambda d: d["lon"])
     n = len(items)
     
-    # Iterate a few times to spread colliding glyphs smoothly
     for _ in range(5):
         for i in range(n):
             j = (i + 1) % n
@@ -290,15 +287,15 @@ def get_aspect_pairs(positions):
 # ---------------------- Streamlit Sidebar UI Inputs ----------------------
 st.sidebar.header("⚙️ Calculation Settings")
 
-# Time Management State System
+# Time Management State System (Set to Daily Adjustments)
 if 'base_date' not in st.session_state:
     st.session_state.base_date = datetime.now()
 
 col1, col2 = st.sidebar.columns(2)
 if col1.button("⟨ Step Back"):
-    st.session_state.base_date -= timedelta(hours=1)
+    st.session_state.base_date -= timedelta(days=1)
 if col2.button("Step Forward ⟩"):
-    st.session_state.base_date += timedelta(hours=1)
+    st.session_state.base_date += timedelta(days=1)
 if st.sidebar.button("🎯 Reset to Now"):
     st.session_state.base_date = datetime.now()
 
@@ -355,7 +352,6 @@ for name, body_key in PLANETS:
             lon, lat, _ = calc_ecliptic_sf(t, jd_ut, eph, body_key, center_mode, zodiac_mode, ayanamsa_name)
             disp_str = format_lon_deg(lon) if quantity_mode == "lon" else format_signed_deg(lat)
         
-        # Always query standard longitude for rendering structural geometric placements
         w_lon, _, _ = calc_ecliptic_sf(t, jd_ut, eph, body_key, center_mode, zodiac_mode, ayanamsa_name)
         wheel_positions.append((name, w_lon))
         text_report.append(f"{name:<12} : {disp_str}")
@@ -372,14 +368,12 @@ st.subheader(f"Data Matrix Target Time: {localized_time.strftime('%A, %B %d, %Y 
 view_col, report_col = st.columns([3, 2])
 
 with view_col:
-    # Build Matplotlib Canvas Object
     fig, ax = plt.subplots(figsize=(8, 8), facecolor='black')
     ax.set_facecolor('black')
     ax.set_xlim(-1.2, 1.2)
     ax.set_ylim(-1.2, 1.2)
     ax.axis('off')
 
-    # Draw Wheel Baselines
     outer_circle = plt.Circle((0, 0), 1.0, color='#333333', fill=False, linewidth=2)
     inner_circle = plt.Circle((0, 0), 0.8, color='#333333', fill=False, linewidth=1.5)
     hub_circle = plt.Circle((0, 0), 0.25, color='#222222', fill=False, linewidth=1)
@@ -387,42 +381,31 @@ with view_col:
     ax.add_artist(inner_circle)
     ax.add_artist(hub_circle)
 
-    # 30-degree Structural Sign Dividers
     for deg in range(0, 360, 30):
         rad = math.radians(180.0 + deg)
         ax.plot([0.8 * math.cos(rad), 1.0 * math.cos(rad)], [0.8 * math.sin(rad), 1.0 * math.sin(rad)], color='#333333', linewidth=1.5)
 
-    # Zodiac Sign Identity Labels
     for i, sign in enumerate(ZODIAC_SIGNS):
         mid_deg = i * 30.0 + 15.0
         rad = math.radians(180.0 + mid_deg)
         ax.text(0.9 * math.cos(rad), 0.9 * math.sin(rad), sign, color='#ffffff', fontsize=16, ha='center', va='center')
 
-    # Draw Inter-Planetary Aspect Lines
     aspect_lines = get_aspect_pairs(wheel_positions)
     for lon1, lon2, color in aspect_lines:
         r1, r2 = math.radians(180.0 + lon1), math.radians(180.0 + lon2)
         ax.plot([0.75 * math.cos(r1), 0.75 * math.cos(r2)], [0.75 * math.sin(r1), 0.75 * math.sin(r2)], color=color, linewidth=1.5, alpha=0.8)
 
-    # Print Separated Planets and Custom Alignment Vectors
     separated_glyphs = layout_glyphs_on_ring(wheel_positions, label_r=0.6)
     for glyph in separated_glyphs:
         t_rad = math.radians(180.0 + glyph["lon"])
         d_rad = math.radians(180.0 + glyph["disp_lon"])
         
-        # Native Marker Points
         p_color = '#00C853' if glyph["name"] == "Asc" else '#ffffff'
         ax.plot(0.79 * math.cos(t_rad), 0.79 * math.sin(t_rad), marker='o', color=p_color, markersize=4)
-        
-        # Dynamic Separation Pointer Line Mechanics
         ax.plot([0.78 * math.cos(t_rad), 0.62 * math.cos(d_rad)], [0.78 * math.sin(t_rad), 0.62 * math.sin(d_rad)], color='#444444', linewidth=0.5)
-        
-        # Glyph Rendering
         ax.text(0.58 * math.cos(d_rad), 0.58 * math.sin(d_rad), glyph["text"], color=p_color, fontsize=14, ha='center', va='center')
 
-    # Central Text Branding
     ax.text(0, -0.05, f"{zodiac_mode.upper()}", color='#666666', fontsize=9, ha='center', va='center', fontweight='bold')
-    
     st.pyplot(fig)
 
 with report_col:
