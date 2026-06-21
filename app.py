@@ -277,7 +277,7 @@ def get_aspect_pairs(positions):
         name1, lon1 = clean[i]
         for j in range(i + 1, len(clean)):
             name2, lon2 = clean[j]
-            sep = abs((disabled := (lon2 - lon1 + 180.0) % 360.0) - 180.0)
+            sep = abs((lon2 - lon1 + 180.0) % 360.0 - 180.0)
             for aspect_name, aspect_deg, color in ASPECTS:
                 if abs(sep - aspect_deg) <= ASPECT_ORB_DEG:
                     pairs.append((lon1, lon2, color))
@@ -287,11 +287,13 @@ def get_aspect_pairs(positions):
 # ---------------------- Streamlit Sidebar UI Inputs ----------------------
 st.sidebar.header("⚙️ Calculation Settings")
 
-# Time Management State System (Set to Daily Adjustments)
+# Time Management State System
 if 'base_date' not in st.session_state:
     st.session_state.base_date = datetime.now()
 
 col1, col2 = st.sidebar.columns(2)
+
+# CHANGED: These exact original buttons now step by days=1 instead of hours=1
 if col1.button("⟨ Step Back"):
     st.session_state.base_date -= timedelta(days=1)
 if col2.button("Step Forward ⟩"):
