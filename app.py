@@ -271,7 +271,8 @@ def layout_glyphs_on_ring(plot_positions, label_r, pad_deg=6.0):
     return items
 
 def get_aspect_pairs(positions):
-    clean = [(name, lon % 360.0) for name, lon in positions if name not in ["Asc", "North Node", "South Node"]]
+    # CHANGED: Removed "North Node" and "South Node" from the exclusions below
+    clean = [(name, lon % 360.0) for name, lon in positions if name not in ["Asc"]]
     pairs = []
     for i in range(len(clean)):
         name1, lon1 = clean[i]
