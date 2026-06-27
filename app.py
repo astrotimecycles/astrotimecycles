@@ -55,7 +55,7 @@ BODY_ALIASES = {
 PLANET_GLYPHS = {
     "Sun": "☉", "Moon": "☽", "Mercury": "☿", "Venus": "♀", "Mars": "♂",
     "Jupiter": "♃", "Saturn": "♄", "Uranus": "♅", "Neptune": "♆", "Pluto": "♇",
-    "Asc": "Asc", "North Node": "☊"
+    "Asc": "Asc", "North Node": "☊", "South Node": "☋"
 }
 ASPECTS = [
     ("Sextile", 60.0, "#00BCD4"),
@@ -271,7 +271,7 @@ def layout_glyphs_on_ring(plot_positions, label_r, pad_deg=6.0):
     return items
 
 def get_aspect_pairs(positions):
-    clean = [(name, lon % 360.0) for name, lon in positions if name != "Asc"]
+    clean = [(name, lon % 360.0) for name, lon in positions if name not in ["Asc", "North Node", "South Node"]]
     pairs = []
     for i in range(len(clean)):
         name1, lon1 = clean[i]
@@ -293,7 +293,6 @@ if 'base_date' not in st.session_state:
 
 col1, col2 = st.sidebar.columns(2)
 
-# CHANGED: These exact original buttons now step by days=1 instead of hours=1
 if col1.button("⟨ Step Back"):
     st.session_state.base_date -= timedelta(days=1)
 if col2.button("Step Forward ⟩"):
@@ -339,8 +338,13 @@ if center_mode == "geo" and asc_disp is not None:
 
 if center_mode == "geo":
     n_node = calc_north_node_lon(t, jd_ut, eph, zodiac_mode, ayanamsa_name)
+    s_node = wrap360(n_node + 180.0)
+    
     wheel_positions.append(("North Node", n_node))
+    wheel_positions.append(("South Node", s_node))
+    
     text_report.append(f"{'North Node':<12} : {format_lon_deg(n_node)}")
+    text_report.append(f"{'South Node':<12} : {format_lon_deg(s_node)}")
 
 for name, body_key in PLANETS:
     try:
@@ -402,7 +406,13 @@ with view_col:
         t_rad = math.radians(180.0 + glyph["lon"])
         d_rad = math.radians(180.0 + glyph["disp_lon"])
         
-        p_color = '#00C853' if glyph["name"] == "Asc" else '#ffffff'
+        if glyph["name"] == "Asc":
+            p_color = '#00C853'
+        elif glyph["name"] in ["North Node", "South Node"]:
+            p_color = '#FFB300'
+        else:
+            p_color = '#ffffff'
+            
         ax.plot(0.79 * math.cos(t_rad), 0.79 * math.sin(t_rad), marker='o', color=p_color, markersize=4)
         ax.plot([0.78 * math.cos(t_rad), 0.62 * math.cos(d_rad)], [0.78 * math.sin(t_rad), 0.62 * math.sin(d_rad)], color='#444444', linewidth=0.5)
         ax.text(0.58 * math.cos(d_rad), 0.58 * math.sin(d_rad), glyph["text"], color=p_color, fontsize=14, ha='center', va='center')
