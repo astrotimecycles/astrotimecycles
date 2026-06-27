@@ -6,6 +6,9 @@ on:
     - cron: '0 */12 * * *'
   workflow_dispatch: # Allows you to run it manually if you ever want to
 
+permissions:
+  contents: write
+
 jobs:
   ping-repo:
     runs-on: ubuntu-latest
